@@ -302,7 +302,7 @@ loader.load('running_jerry.glb', (gltf) => {
 let enemy;
 loader.load('tom_animated.glb', (gltf) => {
     enemy = gltf.scene;
-    enemy.scale.set(1.5, 1.5, 1.5);
+    enemy.scale.set(2, 2, 2);
     enemy.position.set(10, 0, 10);
     scene.add(enemy);
     enemyMixer = new THREE.AnimationMixer(enemy);
