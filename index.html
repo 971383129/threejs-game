@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="shortcut icon" href="#" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Dungeon Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: black;
+            color: white;
+        }
+        canvas {
+            display: block;
+        }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 24px;
+            z-index: 1;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 18px;
+            z-index: 2;
+        }
+        #winScreen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 24px;
+            z-index: 3;
+        }
+        #gameOverImage {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 3; /* 确保图片作为背景 */
+        }
+        #settingsOverlay input[type="range"] {
+        -webkit-appearance: none;
+        width: 80%;
+        height: 5px;
+        border-radius: 5px;
+        outline: none;
+        transition: background 0.2s;
+        }
+        #settingsOverlay input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #4CAF50;
+        cursor: pointer;
+        border-radius: 50%;
+        }
+        #settingsOverlay select {
+        padding: 10px;
+        font-size: 16px;
+        border: none;
+        background: #eee;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 80%;
+        }
+
+        button:hover {
+        background-color: #45a049; /* 鼠标悬停时变亮 */
+        transform: scale(1.1); /* 鼠标悬停时放大 */
+        transition: transform 0.2s, background-color 0.2s; /* 添加过渡动画 */
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <div id="overlay">
+            <div id="startScreen" style="background: url('R-C.jpg') center/cover no-repeat; width: 100%; height: 100%;">
+                <h1 style="text-align: center;font-family: 'Microsoft YaHei', sans-serif; margin-top: 10vh; color: rgb(0, 0, 0); font-size: 80px;">欢迎来到帮助杰瑞找奶酪小游戏！</h1>
+                <div style="text-align: center; margin-top: 30px;">
+                    <!-- 按钮部分 -->
+                    <button id="startButton" style="padding: 15px 30px; font-size: 24px; margin: 10px; border: none; border-radius: 8px; background-color: #4CAF50; color: white; cursor: pointer;">开始游戏</button>
+                    <button id="settingsButton" style="padding: 15px 30px; font-size: 24px; margin: 10px; border: none; border-radius: 8px; background-color: #2196F3; color: white; cursor: pointer;">设置</button>
+                    <button id="instructionsButton" style="padding: 15px 30px; font-size: 24px; margin: 10px; border: none; border-radius: 8px; background-color: #FF5722; color: white; cursor: pointer;">游戏说明</button>
+                    <button id="viewRecordsButton" style="padding: 15px 30px; font-size: 24px; margin: 10px; border: none; border-radius: 8px; background-color: #673AB7; color: white; cursor: pointer;">查看记录</button>
+                </div>
+                
+                <p style="text-align: center; font-family: 'KaiTi', '楷体', serif; font-size: 70px; font-weight: bold; position: absolute; bottom: 1%; left: 50%; transform: translateX(-50%); color: rgb(0, 0, 0);">
+                    制作人：张豪铄
+                </p>
+            </div>
+        </div>
+        
+        <!-- 记录弹窗 -->
+        <div id="recordsOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); color: white; text-align: center; z-index: 10;">
+            <h2 style="margin-top: 50px;">游戏记录</h2>
+            <ul id="recordsList" style="list-style: none; padding: 0; font-size: 20px;"></ul>
+            <button id="clearRecordsButton" style="padding: 15px 30px; font-size: 24px; margin: 10px; border: none; border-radius: 8px; background-color: #F44336; color: white; cursor: pointer;">清空记录</button>
+
+            <button id="closeRecordsButton" style="margin-top: 20px; padding: 10px 20px; font-size: 24px;">关闭</button>
+        </div>
+    </div>
+    <div id="gameOverScreen" style="display: none; position: absolute; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); text-align: center; color: white;">
+        <img id="gameOverImage" />
+        <h1 id="gameOverText" style="font-size: 72px; color: red; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 4;">游戏结束！</h1>
+        <p style="margin-top: 20px; font-size: 24px; z-index: 4; position: absolute; top: 0%; left: 46%;;">按 F5 重新开始</p>
+    </div>
+    <div id="hintMessage" style="display: none; position: absolute; bottom: 20%; width: 100%; text-align: center; font-size: 24px; color: white; font-weight: bold;">
+        按 F 吃掉奶酪！
+    </div>
+</div>
+<div id="winScreen" style="display: none;">
+    <p>您成功找到没有中毒的奶酪！</p>
+    <p>按 F5 重新开始</p>
+</div>
+<div id="score" style="display: none;">存活时间: <span id="timer">0</span> 秒</div>
+<div id="instructionsOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10; color: white;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60%; text-align: center; font-size: 20px; background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px;">
+        <h2 style="margin-bottom: 20px;">游戏玩法</h2>
+        <p>1. 使用方向键或WASD键控制杰瑞移动。</p>
+        <p>2. 当杰瑞靠近奶酪时，按F键吃掉奶酪。</p>
+        <p>3. 避免被汤姆抓到！找到目标奶酪才能获胜！</p>
+        <button id="closeInstructions" style="margin-top: 20px; padding: 10px 20px; font-size: 16px; border: none; background: #4CAF50; color: white; cursor: pointer; border-radius: 5px;">关闭</button>
+    </div>
+</div>
+<div id="settingsOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10; color: white;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60%; text-align: center; font-size: 20px; background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px;">
+        <h2 style="margin-bottom: 20px;">游戏设置</h2>
+
+        <!-- 分辨率控制 -->
+        <label for="resolutionControl" style="display: block; margin-bottom: 10px;">分辨率</label>
+        <select id="resolutionControl" style="width: 80%; padding: 10px; font-size: 16px;">
+            <option value="1920x1080">1920 x 1080</option>
+            <option value="1280x720">1280 x 720</option>
+            <option value="800x600">800 x 600</option>
+        </select>
+
+        <!-- 音量控制 -->
+        <label for="volumeControl" style="display: block; margin-top: 20px; margin-bottom: 10px;">声音音量</label>
+        <input id="volumeControl" type="range" min="0" max="100" value="50" style="width: 80%;">
+
+        <!-- 亮度控制 -->
+        <label for="brightnessControl" style="display: block; margin-top: 20px; margin-bottom: 10px;">亮度</label>
+        <input id="brightnessControl" type="range" min="0" max="100" value="50" style="width: 80%;">
+
+        <!-- 返回按钮 -->
+        <button id="closeSettings" style="margin-top: 20px; padding: 10px 20px; font-size: 16px; border: none; background: #4CAF50; color: white; cursor: pointer; border-radius: 5px;">保存设置并返回</button>
+    </div>
+</div>
+
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"
+      }
+    }
+</script>
+<script type="module">
+    
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+// 场景、相机和渲染器
+const scene = new THREE.Scene();
+let isFirstPerson = false;
+const firstPersonCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const thirdPersonCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+let camera = thirdPersonCamera;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; // 使用 ACES 色调映射
+renderer.toneMappingExposure = 1.5; // 增加曝光值
+document.body.appendChild(renderer.domElement);
+
+// 地板 - 添加纹理
+const floorTexture = new THREE.TextureLoader().load('https://s1.4sai.com/pvimg/img/png/3c/3c8d4dc0ee2846e99f70b75d2d9ab6cc.png?imageMogr2/auto-orient/thumbnail/!240x320r/gravity/Center/crop/240x320/quality/85/%7CimageView2/2/w/240&e=1735488000&token=1srnZGLKZ0Aqlz6dk7yF4SkiYf4eP-YrEOdM1sob:_QzKmeTjI3Pdg56NudLmb62rnrc=');
+floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+floorTexture.repeat.set(4, 4);
+const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.6 });
+const floorGeometry = new THREE.PlaneGeometry(100, 100);
+const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2; // 旋转地板为水平
+scene.add(floor);
+
+// 墙壁 - 添加不同的纹理
+const wallTexture = new THREE.TextureLoader().load('https://threejs.org/examples/textures/brick_diffuse.jpg');
+wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+wallTexture.repeat.set(10, 2);
+const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.5 });
+
+// 墙体的高度调整
+const wallHeight = 10;  // 墙壁高度
+
+// 墙壁几何体
+const wallGeometry = new THREE.BoxGeometry(100, wallHeight, 1);
+const wall1 = new THREE.Mesh(wallGeometry, wallMaterial);
+wall1.position.set(0, wallHeight / 2, -50); // 北墙
+
+const wall2 = wall1.clone();
+wall2.position.set(0, wallHeight / 2, 50); // 南墙
+
+const wall3 = new THREE.Mesh(new THREE.BoxGeometry(1, wallHeight, 100), wallMaterial);
+wall3.position.set(-50, wallHeight / 2, 0); // 西墙
+
+const wall4 = wall3.clone();
+wall4.position.set(50, wallHeight / 2, 0); // 东墙
+scene.add(wall1, wall2, wall3, wall4);
+
+// 天花板 - 与墙的高度一致
+const ceilingGeometry = new THREE.PlaneGeometry(100, 100);
+const ceilingMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.5 });
+const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+ceiling.rotation.x = Math.PI / 2; // 旋转天花板为水平
+ceiling.position.set(0, wallHeight, 0); // 设置天花板位置与墙顶部对齐
+scene.add(ceiling);
+
+const loader = new GLTFLoader();
+
+let playerMixer, enemyMixer;
+
+// 奶酪和出口设置
+const obstacles = []; // 存储所有奶酪对象
+const cheeseGridSize = 10; // 10x10 的奶酪网格
+const gridSpacing = 10; // 每个奶酪之间的间隔（根据地板大小调整）
+
+// 创建均匀分布的奶酪
+for (let i = 0; i < cheeseGridSize; i++) {
+    for (let j = 0; j < cheeseGridSize; j++) {
+        loader.load('cheese_wedge.glb', (gltf) => {
+            const obstacle = gltf.scene.clone();
+            obstacle.scale.set(1, 1, 1);
+            obstacle.position.set(
+                (i - cheeseGridSize / 2) * gridSpacing+2,
+                0,
+                (j - cheeseGridSize / 2) * gridSpacing+2
+            );
+            obstacles.push(obstacle);
+            scene.add(obstacle);
+        });
+    }
+}
+
+// 随机选择一个奶酪作为出口
+let exit;
+setTimeout(() => {
+    const randomIndex = Math.floor(Math.random() * obstacles.length); // 随机选择索引
+    exit = obstacles[randomIndex]; // 将出口设置为随机奶酪
+    exit.children.forEach(child => { // 给出口添加颜色或其他标记
+        if (child.material) {
+            child.material.color.set(0x0000ff); // 将奶酪颜色改为蓝色作为出口标记
+        }
+    });
+}, 500); // 延迟执行，确保所有奶酪加载完成
+
+// 玩家 - 替换为更有趣的模型
+let player;
+loader.load('running_jerry.glb', (gltf) => {
+    player = gltf.scene;
+    player.scale.set(0.2, 0.2, 0.2);
+    player.position.set(0, 0, 0);
+    scene.add(player);
+    playerMixer = new THREE.AnimationMixer(player);
+
+    // 播放动画
+    const playerAction = playerMixer.clipAction(gltf.animations[0]); // 播放第一个动画
+    playerAction.setLoop(THREE.LoopRepeat); // 设置为循环播放
+    playerAction.play();
+
+    thirdPersonCamera.position.set(
+        player.position.x - Math.sin(yaw) * 5,
+        player.position.y + 3,
+        player.position.z - Math.cos(yaw) * 5
+    );
+    thirdPersonCamera.lookAt(player.position);
+});
+
+// 敌人 - 替换为更有趣的模型
+let enemy;
+loader.load('tom_animated.glb', (gltf) => {
+    enemy = gltf.scene;
+    enemy.scale.set(1.5, 1.5, 1.5);
+    enemy.position.set(10, 0, 10);
+    scene.add(enemy);
+    enemyMixer = new THREE.AnimationMixer(enemy);
+
+    // 播放动画
+    const enemyAction = enemyMixer.clipAction(gltf.animations[0]);
+    enemyAction.setLoop(THREE.LoopRepeat);
+    enemyAction.play();
+});
+
+
+    // 主光源
+    const light = new THREE.PointLight(0xffffff, 2, 200); 
+    light.position.set(0, 20, 0); 
+    scene.add(light);
+
+    // 环境光
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // 柔和的环境光
+    scene.add(ambientLight);
+
+    // 游戏状态变量
+    let isGameRunning = false;
+    let isGameOver = false;
+    let timer = 0;
+    let startTime; // 游戏开始时间
+    let elapsedTime; // 游戏用时
+    const timerElement = document.getElementById("timer");
+    const overlay = document.getElementById("overlay");
+    const startScreen = document.getElementById("startScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const scoreBoard = document.getElementById("score");
+    const winScreen = document.getElementById("winScreen");
+    const startButton = document.getElementById("startButton");
+    const instructionsButton = document.getElementById("instructionsButton");
+    const viewRecordsButton = document.getElementById("viewRecordsButton");
+    const recordsOverlay = document.getElementById("recordsOverlay");
+    const recordsList = document.getElementById("recordsList");
+    const closeRecordsButton = document.getElementById("closeRecordsButton");
+    const clearRecordsButton = document.getElementById("clearRecordsButton");
+
+    const happyMusic = new Audio("happy.mp3"); // 替换为你的欢快音乐文件路径
+    const tenseMusic = new Audio("tense.mp3"); // 替换为你的紧张音乐文件路径
+    // 设置音频属性
+    happyMusic.loop = true; // 循环播放
+    tenseMusic.loop = true; // 循环播放
+
+function saveGameRecord(elapsedTime) {
+    // 从 localStorage 获取已有记录
+    let gameRecords = JSON.parse(localStorage.getItem("gameRecords")) || [];
+
+    // 添加新的记录
+    gameRecords.push(elapsedTime);
+
+    // 保存到 localStorage
+    localStorage.setItem("gameRecords", JSON.stringify(gameRecords));
+}
+
+// 显示记录
+viewRecordsButton.addEventListener("click", () => {
+    // 获取记录
+    const gameRecords = JSON.parse(localStorage.getItem("gameRecords")) || [];
+
+    // 清空记录列表
+    recordsList.innerHTML = "";
+
+    // 添加记录到列表
+    if (gameRecords.length > 0) {
+        gameRecords.forEach((record, index) => {
+            const listItem = document.createElement("li");
+            listItem.textContent = `记录 ${index + 1}: ${record} 秒`;
+            recordsList.appendChild(listItem);
+        });
+    } else {
+        // 如果没有记录
+        const listItem = document.createElement("li");
+        listItem.textContent = "暂无记录";
+        recordsList.appendChild(listItem);
+    }
+
+    // 显示弹窗
+    recordsOverlay.style.display = "block";
+});
+
+// 关闭记录弹窗
+closeRecordsButton.addEventListener("click", () => {
+    recordsOverlay.style.display = "none";
+});
+
+// 绑定清空记录功能
+clearRecordsButton.addEventListener("click", () => {
+    localStorage.removeItem("gameRecords"); // 清空记录
+    recordsList.innerHTML = "<li>暂无记录</li>"; // 更新 UI
+    alert("所有记录已清空！");
+});
+// 设置按钮功能
+    // 获取设置按钮和设置浮层
+const settingsButton = document.getElementById("settingsButton");
+const settingsOverlay = document.getElementById("settingsOverlay");
+const closeSettings = document.getElementById("closeSettings");
+
+// 获取控件
+const resolutionControl = document.getElementById("resolutionControl");
+const volumeControl = document.getElementById("volumeControl");
+const brightnessControl = document.getElementById("brightnessControl");
+
+// 默认设置
+let gameVolume = 0.5; // 默认音量 50%
+let gameBrightness = 0.5; // 默认亮度 50%
+let gameResolution = "1920x1080"; // 默认分辨率
+
+// 点击设置按钮显示设置界面
+settingsButton.addEventListener("click", () => {
+    settingsOverlay.style.display = "block";
+});
+
+// 点击关闭按钮保存设置并隐藏界面
+closeSettings.addEventListener("click", () => {
+    settingsOverlay.style.display = "none";
+
+    // 保存音量
+    gameVolume = volumeControl.value / 100;
+
+    // 保存亮度
+    gameBrightness = brightnessControl.value / 100;
+    adjustGameBrightness(gameBrightness);
+
+    // 保存分辨率
+    gameResolution = resolutionControl.value;
+    adjustGameResolution(gameResolution);
+
+    console.log(`设置已保存：音量=${gameVolume}, 亮度=${gameBrightness}, 分辨率=${gameResolution}`);
+});
+
+// 调整亮度
+function adjustGameBrightness(brightness) {
+    const canvas = document.querySelector("canvas"); // 获取游戏画布
+    canvas.style.filter = `brightness(${brightness + 0.5})`; // 调整亮度，最低为50%
+}
+
+// 调整分辨率
+function adjustGameResolution(resolution) {
+    const [width, height] = resolution.split("x").map(Number);
+    const canvas = document.querySelector("canvas"); // 获取游戏画布
+    canvas.width = width;
+    canvas.height = height;
+    renderer.setSize(width, height); // 更新 Three.js 渲染器大小
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+}
+
+// 调整音量
+
+happyMusic.volume = gameVolume; // 设置默认音量
+
+tenseMusic.volume = gameVolume; // 设置默认音量
+
+volumeControl.addEventListener("input", () => {
+    happyMusic.volume = volumeControl.value / 100;
+    tenseMusic.volume = volumeControl.value / 100;
+});
+
+
+// 游戏说明按钮功能
+// 获取游戏玩法浮层和关闭按钮
+const instructionsOverlay = document.getElementById("instructionsOverlay");
+const closeInstructions = document.getElementById("closeInstructions");
+
+// 点击游戏玩法按钮显示浮层
+instructionsButton.addEventListener("click", () => {
+    instructionsOverlay.style.display = "block";
+});
+
+// 点击关闭按钮隐藏浮层
+closeInstructions.addEventListener("click", () => {
+    instructionsOverlay.style.display = "none";
+});
+    // 玩家控制
+    const keys = {};
+    let canJump = true;
+    const playerVelocity = new THREE.Vector3(0, 0, 0);
+    window.addEventListener('keydown', (event) => {
+        keys[event.key] = true;
+        if (event.key === ' ' && canJump) {
+            playerVelocity.y = 0.25; // 设置初始跳跃速度
+            canJump = false;
+        }
+        }
+    );
+    window.addEventListener('keyup', (event) => {
+        keys[event.key] = false;
+    });
+
+    // 鼠标控制变量
+    let yaw = Math.PI; // 初始方向与玩家一致
+    const sensitivity = 0.002;
+
+    // 请求 Pointer Lock API
+    document.body.requestPointerLock = document.body.requestPointerLock || document.body.mozRequestPointerLock || document.body.webkitRequestPointerLock;
+
+    document.addEventListener('click', () => {
+        document.body.requestPointerLock();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+        if (document.pointerLockElement === document.body) {
+            console.log("Pointer locked");
+        } else {
+            console.log("Pointer unlocked");
+        }
+    });
+
+    // 监听鼠标事件，结合 Pointer Lock
+    window.addEventListener('mousemove', (event) => {
+        if (document.pointerLockElement === document.body) {
+            yaw -= event.movementX * sensitivity; // 不再受屏幕边界的限制
+        }
+    });
+
+    const hintMessage = document.getElementById("hintMessage"); // 获取提示框元素
+
+    let currentCheese = null; // 当前玩家接触的奶酪
+
+function checkCheeseCollision() {
+    if (!player || !isGameRunning) return;
+
+    let cheeseFound = false; // 标记玩家是否碰到奶酪
+
+    // 遍历所有奶酪
+    for (let i = 0; i < obstacles.length; i++) {
+        const cheese = obstacles[i];
+
+        // 计算玩家与奶酪中心的距离
+        const distance = player.position.distanceTo(cheese.position);
+
+        // 如果距离较近（小于一定阈值），则进一步精确检测
+        if (distance < 2) { // 设置距离阈值，比如2米
+            const raycaster = new THREE.Raycaster();
+            raycaster.set(player.position, cheese.position.clone().sub(player.position).normalize()); // 从玩家指向奶酪的射线
+
+            const intersects = raycaster.intersectObject(cheese, true); // 精确检测玩家是否真的碰撞到奶酪
+            if (intersects.length > 0) {
+                cheeseFound = true;
+
+                if (currentCheese !== cheese) {
+                    // 更新当前碰撞到的奶酪
+                    currentCheese = cheese;
+
+                    // 显示提示信息
+                    hintMessage.textContent = "按 F 吃掉奶酪！";
+                    hintMessage.style.display = "block";
+                }
+                break;
+            }
+        }
+    }
+
+    if (!cheeseFound) {
+        // 如果没有碰撞到任何奶酪
+        currentCheese = null; // 重置当前奶酪
+        hintMessage.style.display = "none"; // 隐藏提示信息
+        return false;
+    }  else {
+        return true;
+    }
+    
+    
+}
+
+
+
+window.addEventListener('keydown', (event) => {
+    if ((event.key === 'f' || event.key === 'F') && currentCheese) {
+        hintMessage.style.display = "none"; // 隐藏提示信息
+        if (currentCheese === exit) {
+            const gameOverText = document.getElementById("gameOverText");
+            const gameOverImage = document.getElementById("gameOverImage");
+            elapsedTime = timer.toFixed(2);
+            saveGameRecord(elapsedTime);
+            gameOverText.textContent = `你成功找到没有中毒的奶酪！ 用时：${elapsedTime} 秒`; // 显示用时
+            gameOverImage.src = "wallpapersden.com_tom-and-jerry-cheese-mouse_1920x1440.jpg"; // 设置成功的图片
+            gameOverImage.style.display = "block"; // 显示图片
+
+            winScreen.style.display = "none"; // 隐藏胜利页面
+            gameOverScreen.style.display = "flex"; // 显示结束页面
+            isGameOver = true;
+            isGameRunning = false;
+            scoreBoard.style.display = "none";
+            distanceHint.style.display = "none";
+        } else {
+            
+            const gameOverText = document.getElementById("gameOverText");
+            const gameOverImage = document.getElementById("gameOverImage");
+            elapsedTime = timer.toFixed(2);
+            
+            gameOverText.textContent = `你中毒了！ 用时：${elapsedTime} 秒`; // 显示用时
+            gameOverImage.src = "rise.png"; // 设置中毒的图片
+            gameOverImage.style.display = "block"; // 显示图片
+
+            gameOverScreen.style.display = "flex"; // 显示结束页面
+            isGameOver = true;
+            isGameRunning = false;
+            scoreBoard.style.display = "none";
+            distanceHint.style.display = "none";
+        }
+
+        // 吃完当前奶酪后重置
+        currentCheese = null; // 清空当前奶酪
+    }
+});
+
+function checkTomCheeseCollision(tom, cheeses) {
+    const tomBox = new THREE.Box3().setFromObject(tom); // 获取汤姆的碰撞箱
+
+    for (let i = 0; i < cheeses.length; i++) {
+        const cheeseBox = new THREE.Box3().setFromObject(cheeses[i]); // 获取奶酪的碰撞箱
+
+        if (tomBox.intersectsBox(cheeseBox)) {
+            return true; // 如果汤姆与奶酪碰撞，返回 true
+        }
+    }
+
+    return false; // 如果没有碰撞，返回 false
+}
+
+    // 碰撞检测函数
+    function checkCollision(player, obstacles) {
+        const playerBox = new THREE.Box3().setFromObject(player).expandByScalar(-0.1);
+        for (let obstacle of obstacles) {
+            const obstacleBox = new THREE.Box3().setFromObject(obstacle).expandByScalar(-0.1);
+            if (playerBox.intersectsBox(obstacleBox)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // 敌人碰撞检测函数
+    function checkEnemyCollision(enemy, player) {
+        const enemyBox = new THREE.Box3().setFromObject(enemy).expandByScalar(-0.1);
+        const playerBox = new THREE.Box3().setFromObject(player);
+        return enemyBox.intersectsBox(playerBox);
+    }
+
+    // 检查玩家是否与出口碰撞
+    function checkExitCollision() {
+        if (!isGameRunning || !player) return; // 确保游戏正在运行且玩家已加载
+
+        const exitBox = new THREE.Box3().setFromObject(exit);
+        const playerBox = new THREE.Box3().setFromObject(player);
+
+        if (playerBox.intersectsBox(exitBox)) {
+            console.log("你已经成功找到没有中毒的奶酪！");
+            isGameRunning = false;
+            winScreen.style.display = "flex";
+            scoreBoard.style.display = "none"; 
+        }
+    }
+
+    // 动画循环
+    const clock = new THREE.Clock(); // 用于计算时间间隔
+
+function animate() {
+    const delta = clock.getDelta(); // 获取两帧之间的时间间隔
+
+    // 更新动画混合器
+    if (playerMixer) playerMixer.update(delta);
+    if (enemyMixer) enemyMixer.update(delta);
+
+    // 模拟重力和跳跃
+    if (isGameRunning && !isGameOver) {
+        // 玩家移动逻辑
+        const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+        const right = new THREE.Vector3(forward.z, 0, -forward.x);
+
+        const previousPosition = player.position.clone();
+
+        if (keys['w'] || keys['ArrowUp']) {
+            player.position.add(forward.multiplyScalar(0.05));
+            player.rotation.y = Math.atan2(forward.x, forward.z); // 调整朝向
+        }
+        if (keys['s'] || keys['ArrowDown']) {
+            player.position.add(forward.multiplyScalar(-0.05));
+            player.rotation.y = Math.atan2(-forward.x, -forward.z); // 调整朝向
+        }
+        if (keys['a'] || keys['ArrowLeft']) {
+            player.position.add(right.multiplyScalar(0.05));
+       
+        }
+        if (keys['d'] || keys['ArrowRight']) {
+            player.position.add(right.multiplyScalar(-0.05));
+        
+        }
+
+
+        // 检查玩家与墙壁和障碍物的碰撞
+        if (
+            player.position.x < -47 || player.position.x > 47 ||
+            player.position.z < -47 || player.position.z > 47 ||
+            checkCollision(player, obstacles)
+        ) {
+            player.position.copy(previousPosition);
+        }
+
+        // 敌人追踪玩家
+        const dx = player.position.x - enemy.position.x;
+        const dz = player.position.z - enemy.position.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        if (distance > 0.5) {
+        // 计算移动方向
+            const direction = new THREE.Vector3(dx / distance, 0, dz / distance);
+
+        // 检测汤姆与奶酪的碰撞
+            if (checkTomCheeseCollision(enemy, obstacles)) {
+                // 如果汤姆与奶酪碰撞，调整移动方向
+               // direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 4); // 绕Y轴旋转45度，改变方向
+        } else {
+                // 如果没有碰撞，正常移动
+                enemy.position.x += direction.x * 0.03; // 调整移动速度
+                enemy.position.z += direction.z * 0.03;
+            }
+
+        // 更新汤姆的朝向
+            enemy.rotation.y = Math.atan2(direction.x, direction.z);
+        }
+
+        // 碰撞检测 - 敌人
+        if (checkEnemyCollision(enemy, player)) {
+            const gameOverText = document.getElementById("gameOverText");
+            const gameOverImage = document.getElementById("gameOverImage");
+            elapsedTime = timer.toFixed(2);
+            
+            gameOverScreen.style.display = "flex"; // 显示结束页面
+            gameOverText.textContent = `你被抓到了！ 用时：${elapsedTime} 秒`;
+            gameOverImage.src = "catch.png"; // 设置被抓到的图片
+            gameOverImage.style.display = "block"; // 显示图片
+            
+            
+            isGameOver = true;
+            isGameRunning = false;
+            scoreBoard.style.display = "none";
+            distanceHint.style.display = "none";
+        }
+
+        // 碰撞检测 - 出口
+        checkCheeseCollision();
+
+        // 更新计时器
+        timer += 1.0 / 240;
+        timerElement.textContent = Math.floor(timer);
+
+        // 更新相机位置和方向
+        if (isFirstPerson) {
+            firstPersonCamera.position.set(
+                player.position.x,
+                player.position.y + 1.5,
+                player.position.z
+            );
+            firstPersonCamera.rotation.y = yaw;
+            firstPersonCamera.lookAt(
+                player.position.x + Math.sin(yaw),
+                player.position.y + 1.5,
+                player.position.z + Math.cos(yaw)
+            );
+        } else {
+            thirdPersonCamera.position.set(
+                player.position.x - Math.sin(yaw) * 5,
+                player.position.y + 3,
+                player.position.z - Math.cos(yaw) * 5
+            );
+            thirdPersonCamera.lookAt(player.position);
+        }
+    }
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+}
+
+    // 设置初始相机位置
+
+    // 启动动画
+setTimeout(() => {
+    startButton.addEventListener("click", () => {
+        if (!isGameRunning && !isGameOver) {
+            isGameRunning = true;
+            overlay.style.display = "none";
+            scoreBoard.style.display = "block";
+            distanceHint.style.display = "block";
+            tomDistanceHint.style.display = "block";
+            startTime = performance.now();
+        }
+
+        if (event.key === 'b' || event.key === 'B') {
+            isFirstPerson = !isFirstPerson;
+            camera = isFirstPerson ? firstPersonCamera : thirdPersonCamera;
+        }
+    });
+    animate(); // 延迟一定时间后启动动画
+    console.log("所有模型加载完毕，动画开始！");
+}, 1000);
+
+const distanceHint = document.createElement("div"); // 创建距离提示元素
+distanceHint.style.position = "absolute";
+distanceHint.style.top = "20px";
+distanceHint.style.left = "50%";
+distanceHint.style.transform = "translateX(-50%)";
+distanceHint.style.fontSize = "24px";
+distanceHint.style.color = "white";
+distanceHint.style.backgroundColor = "rgba(0, 0, 0, 0.6)";
+distanceHint.style.padding = "10px 20px";
+distanceHint.style.borderRadius = "8px";
+distanceHint.style.zIndex = "5";
+distanceHint.style.display = "none"; // 初始隐藏
+document.body.appendChild(distanceHint);
+
+function updateDistanceHint() {
+    if (!player || !exit) return;
+
+    // 计算玩家和目标奶酪的距离
+    const distance = player.position.distanceTo(exit.position);
+
+    // 根据距离动态更新提示内容
+ //   distanceHint.textContent = `距离目标奶酪：${Math.round(distance)} 米`;
+
+    // 根据距离变化提示颜色（例如越近颜色越红）
+    if (distance < 5) {
+        distanceHint.style.color = "red";
+        distanceHint.textContent = `距离目标奶酪：< 5 米`;
+    } else if (distance < 10) {
+        distanceHint.style.color = "orange";
+        distanceHint.textContent = `距离目标奶酪：< 10 米`;
+    } else if (distance < 20) {
+        distanceHint.style.color = "yellow";
+        distanceHint.textContent = `距离目标奶酪：< 20 米`;
+    } else if (distance < 30) {
+        distanceHint.style.color = "lightgreen";
+        distanceHint.textContent = `距离目标奶酪：< 30 米`;
+    } else {
+        distanceHint.style.color = "white";
+        distanceHint.textContent = `距离目标奶酪：> 30 米`;
+    }
+}
+
+// 定时更新距离提示（例如每 0.5 秒刷新一次）
+setInterval(updateDistanceHint, 500);
+
+
+
+
+
+
+// 音乐切换标志
+let isHappyMusicPlaying = false;
+let isTenseMusicPlaying = false;
+
+const tomDistanceHint = document.createElement("div"); // 创建距离提示元素
+tomDistanceHint.style.position = "absolute";
+tomDistanceHint.style.bottom = "20px"; // 距离底部 20px
+tomDistanceHint.style.left = "50%"; // 居中
+tomDistanceHint.style.transform = "translateX(-50%)"; // 保证水平居中
+tomDistanceHint.style.fontSize = "36px"; // 字体更大
+tomDistanceHint.style.color = "white"; // 默认字体颜色
+tomDistanceHint.style.backgroundColor = "rgba(0, 0, 0, 0.6)"; // 半透明背景
+tomDistanceHint.style.padding = "15px 30px"; // 增加内边距
+tomDistanceHint.style.borderRadius = "12px"; // 圆角样式
+tomDistanceHint.style.zIndex = "5"; // 提示层级较高
+tomDistanceHint.style.display = "none"; // 初始隐藏
+document.body.appendChild(tomDistanceHint);
+
+// 更新汤姆距离提示的函数
+function updateTomDistanceHint() {
+    if (!player || !enemy) return;
+
+    // 计算玩家和汤姆的距离
+    const distance = player.position.distanceTo(enemy.position);
+
+    // 根据距离动态更新提示内容和样式
+    if (distance < 5) {
+        tomDistanceHint.style.color = "red";
+        tomDistanceHint.textContent = `汤姆很近！距离：< 5 米`;
+
+        // 切换到紧张音乐
+        if (!isTenseMusicPlaying) {
+            happyMusic.pause();
+            happyMusic.currentTime = 0; // 重置欢快音乐
+            tenseMusic.play();
+            isHappyMusicPlaying = false;
+            isTenseMusicPlaying = true;
+        }
+    } else if (distance < 10) {
+        tomDistanceHint.style.color = "orange";
+        tomDistanceHint.textContent = `汤姆接近了！距离：< 10 米`;
+
+        // 切换到紧张音乐
+        if (!isTenseMusicPlaying) {
+            happyMusic.pause();
+            happyMusic.currentTime = 0; // 重置欢快音乐
+            tenseMusic.play();
+            isHappyMusicPlaying = false;
+            isTenseMusicPlaying = true;
+        }
+    } else if (distance >= 10) {
+        tomDistanceHint.style.color = "lightgreen";
+        tomDistanceHint.textContent = `汤姆有点远！距离：> 10 米`;
+
+        // 切换到欢快音乐
+        if (!isHappyMusicPlaying) {
+            tenseMusic.pause();
+            tenseMusic.currentTime = 0; // 重置紧张音乐
+            happyMusic.play();
+            isHappyMusicPlaying = true;
+            isTenseMusicPlaying = false;
+        }
+    }
+
+    // 如果游戏正在运行，显示提示
+    if (isGameRunning) {
+        tomDistanceHint.style.display = "block";
+    } else {
+        tomDistanceHint.style.display = "none";
+
+        // 停止所有音乐
+        happyMusic.pause();
+        tenseMusic.pause();
+    }
+}
+
+setInterval(updateTomDistanceHint,1000);
+</script>
+</body>
+</html>
