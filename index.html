@@ -197,7 +197,7 @@ renderer.toneMappingExposure = 1.5; // 增加曝光值
 document.body.appendChild(renderer.domElement);
 
 // 地板 - 添加纹理
-const floorTexture = new THREE.TextureLoader().load('https://s1.4sai.com/pvimg/img/png/3c/3c8d4dc0ee2846e99f70b75d2d9ab6cc.png?imageMogr2/auto-orient/thumbnail/!240x320r/gravity/Center/crop/240x320/quality/85/%7CimageView2/2/w/240&e=1735488000&token=1srnZGLKZ0Aqlz6dk7yF4SkiYf4eP-YrEOdM1sob:_QzKmeTjI3Pdg56NudLmb62rnrc=');
+const floorTexture = new THREE.TextureLoader().load('3c8d4dc0ee2846e99f70b75d2d9ab6cc.png');
 floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
 floorTexture.repeat.set(4, 4);
 const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.6 });
