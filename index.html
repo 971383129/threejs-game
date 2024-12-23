@@ -916,7 +916,10 @@ function updateTomDistanceHint() {
             isTenseMusicPlaying = false;
         }
     }
-
+    if (!isHappyMusicPlaying && !isTenseMusicPlaying) {
+            happyMusic.play();
+            isHappyMusicPlaying = true;
+    }
     // 如果游戏正在运行，显示提示
     if (isGameRunning) {
         tomDistanceHint.style.display = "block";
