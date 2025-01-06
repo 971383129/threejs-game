@@ -178,7 +178,7 @@
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"
       }
     }
-</script>
+</script> 
 <script type="module">
     
     import * as THREE from 'three';
@@ -715,14 +715,14 @@ function animate() {
             const direction = new THREE.Vector3(dx / distance, 0, dz / distance);
 
         // 检测汤姆与奶酪的碰撞
-       //     if (checkTomCheeseCollision(enemy, obstacles)) {
+           // if (checkTomCheeseCollision(enemy, obstacles)) {
                 // 如果汤姆与奶酪碰撞，调整移动方向
-               // direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 4); // 绕Y轴旋转45度，改变方向
-   //     } else {
+              //  direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 4); // 绕Y轴旋转45度，改变方向
+       // } else {
                 // 如果没有碰撞，正常移动
-          //      enemy.position.x += direction.x * 0.03; // 调整移动速度
-       //         enemy.position.z += direction.z * 0.03;
-       //     }
+                enemy.position.x += direction.x * 0.03; // 调整移动速度
+                enemy.position.z += direction.z * 0.03;
+            //}
 
         // 更新汤姆的朝向
             enemy.rotation.y = Math.atan2(direction.x, direction.z);
@@ -920,6 +920,7 @@ function updateTomDistanceHint() {
             happyMusic.play();
             isHappyMusicPlaying = true;
     }
+    
     // 如果游戏正在运行，显示提示
     if (isGameRunning) {
         tomDistanceHint.style.display = "block";
