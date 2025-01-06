@@ -197,9 +197,9 @@ renderer.toneMappingExposure = 1.5; // 增加曝光值
 document.body.appendChild(renderer.domElement);
 
 // 地板 - 添加纹理
-const floorTexture = new THREE.TextureLoader().load('https://s1.4sai.com/pvimg/img/png/3c/3c8d4dc0ee2846e99f70b75d2d9ab6cc.png?imageMogr2/auto-orient/thumbnail/!240x320r/gravity/Center/crop/240x320/quality/85/%7CimageView2/2/w/240&e=1735488000&token=1srnZGLKZ0Aqlz6dk7yF4SkiYf4eP-YrEOdM1sob:_QzKmeTjI3Pdg56NudLmb62rnrc=');
+const floorTexture = new THREE.TextureLoader().load('https://s1.aigei.com/src/img/jpg/bf/bf61b7f2187a47daa4f71ab78f0e44f0.jpg?imageMogr2/auto-orient/thumbnail/!282x282r/gravity/Center/crop/282x282/quality/85/%7CimageView2/2/w/282&e=2051020800&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:jGYeN-OYCQUBsecs30W1mKnfQy8=');
 floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-floorTexture.repeat.set(4, 4);
+floorTexture.repeat.set(1, 1);
 const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.6 });
 const floorGeometry = new THREE.PlaneGeometry(100, 100);
 const floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -207,9 +207,9 @@ floor.rotation.x = -Math.PI / 2; // 旋转地板为水平
 scene.add(floor);
 
 // 墙壁 - 添加不同的纹理
-const wallTexture = new THREE.TextureLoader().load('https://threejs.org/examples/textures/brick_diffuse.jpg');
+const wallTexture = new THREE.TextureLoader().load('https://s1.aigei.com/src/img/jpg/b1/b1821a5a63424d3e9b37b23539db0272.jpg?imageMogr2/auto-orient/thumbnail/!282x282r/gravity/Center/crop/282x282/quality/85/%7CimageView2/2/w/282&e=2051020800&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:MSoZ2i-iAOyijhjIFbUJKfxPDEQ=');
 wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-wallTexture.repeat.set(10, 2);
+wallTexture.repeat.set(5, 3);
 const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.5 });
 
 // 墙体的高度调整
